@@ -1,0 +1,87 @@
+#include <DS1302.h>
+#include <SPI.h>
+#include <nRF24L01p.h>
+
+nRF24L01p receiver(7,8);//CSN,CE
+String message;
+int cont;
+
+void setup(){
+  delay(150);
+  Serial.begin(115200);
+  SPI.begin();
+  //SPI.setClockDivider(SPI_CLOCK_DIV2);
+  SPI.setBitOrder(MSBFIRST);
+  receiver.channel(90);
+  receiver.TXaddress("Prado");
+  receiver.RXaddress("Artur");
+  receiver.init();
+  delay(3000);
+  Serial.println("Punto de control listo");
+  cont=1;
+}
+
+int unidad;
+int unidad_a[3]={123,124,125}
+int minutos_a[3]=5;
+
+void loop()
+{
+  
+  switch(cont)
+  {
+    case 1:
+             receiver.txPL("PC1");
+             receiver.send(SLOW);
+             break;
+    case 2:
+             receiver.txPL("Unidades");
+             receiver.txPL(unidad_a[0]);
+             receiver.txPL(minutos_a[0]);
+             receiver.txPL(unidad_a[1]);
+             receiver.txPL(minutos_a[1]);
+             receiver.txPL(unidad_a[2]);
+             receiver.txPL(minutos_a[2]);
+             receiver.send(SLOW);
+             delay(150);
+             cont=1;
+             unidad_a[2]=unidad_a[1];             
+             unidad_a[1]=unidad_a[0];
+             unidad_a[0]=unidad;
+             break;
+  }
+  delay(500);
+  
+  if(receiver.available())
+  {
+    message="";
+    receiver.read();
+    receiver.rxPL(message);
+    Serial.print("PTX says: \"");
+    Serial.print(message);
+    Serial.println("\"");
+  }
+  
+  else
+  {
+    message="";
+  }
+  
+  delay(20);
+  
+  if(message=="Unidades")
+  {
+      receiver.rxPL(unidad);
+      Serial.print(unidad);
+      Serial.println("\"");
+      cont=2;
+      //Funcion que obtine los minutos que lleva
+      //con respecto de la anteriores unidadades
+  }
+  
+}
+
+
+
+
+
