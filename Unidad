@@ -1,0 +1,119 @@
+#include <SPI.h>
+#include <nRF24L01p.h>
+#include <EEPROM.h>
+
+nRF24L01p transmitter(7,8);//CSN,CE
+int cont_pc;
+
+void pedir_unidades(void);
+
+void setup(){
+  delay(150);
+  Serial.begin(115200);
+  SPI.begin();
+  //SPI.setClockDivider(SPI_CLOCK_DIV2);
+  SPI.setBitOrder(MSBFIRST);
+  transmitter.channel(90);
+  transmitter.RXaddress("Prado");
+  transmitter.TXaddress("Artur");
+  transmitter.init();
+  Serial.println("Uniadad Lista");
+  cont_pc=0;
+}
+
+String message;
+String PRXsays;
+int unidad=125; //Numero de la unidad
+int unidad_1;
+int unidad_2;
+int unidad_3;
+int minutos_1;
+int minutos_2;
+int minutos_3;
+int permiso;
+
+void loop()
+{
+  
+    
+  //Entra en la condicion cuando recibe algo  
+
+  if(transmitter.available()){
+    transmitter.read();
+    transmitter.rxPL(PRXsays);
+    Serial.println(PRXsays);
+    
+    
+    //Dependiendo en que punto de control este parado
+    //va pedir las unidades anterioresn que pasaron
+    //por el punto de control, y guardar la hora
+    //por la que pasa por el punto de control  
+    //se utilza un contador para que no este
+    //guaradando la hora constantemenre y pidiendo
+    //las unidades anteriores
+    delay(150);
+    
+    /*if(PSXsays=="Permiso"&&boton==HIGH)
+    {
+      Serial.println("Permiso para Salir");
+      permiso=1;
+      //Guardo la hora de salida
+      //vaceo los registroa de los puntos de control
+    }
+   */
+           
+    if(cont_pc==0&&PRXsays=="PC1")
+    {
+      pedir_unidades();
+      cont_pc++;
+      //Guarda la hora al pasar por el punto de control 1
+    }
+    
+   
+    if(cont_pc==1&&PRXsays=="PC2")
+    {
+      pedir_unidades();
+      cont_pc++; 
+     //Guarda la hora al pasar por el punto de control 2
+    }
+    
+    if(cont_pc==2&&PRXsays=="PC3")
+    {
+      pedir_unidades();
+      cont_pc==0;
+      //Guarda la hora al pasar por el punto de control 3
+    }
+    
+    if(PRXsays=="Unidades")
+    {
+      transmitter.rxPL(unidad_1);
+      transmitter.rxPL(minutos_1);
+      transmitter.rxPL(unidad_2);
+      transmitter.rxPL(minutos_2);
+      transmitter.rxPL(unidad_3);
+      transmitter.rxPL(minutos_3);
+      Serial.print(unidad_1);
+      Serial.print(" ");
+      Serial.print(minutos_1);
+      Serial.print(" ");
+      Serial.print(unidad_2);
+      Serial.print(" ");
+      Serial.print(minutos_2);
+      Serial.print(" ");
+      Serial.print(unidad_3);
+      Serial.print(" ");
+      Serial.print(minutos_3);
+      Serial.println("\"");      
+    }
+    
+    PRXsays="";
+  }
+}
+
+void pedir_unidades(void)
+{
+  transmitter.txPL("Unidades");
+  transmitter.txPL(unidad);
+  transmitter.send(SLOW);
+  delay(500);
+}
